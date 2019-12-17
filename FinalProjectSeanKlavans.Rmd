@@ -1,0 +1,110 @@
+---
+title: "Stat184 Final Project - Sean Klavans"
+name: Sean Klavans
+output: html_document
+---
+
+
+##Guiding Question:
+
+Recently, there has been speculation that the way basketball is being played in the NBA is changing. Specifically, the game is becoming a lot more offense orientated in the sense that teams are scoring more points than in previous years and the game has sped up. I am going to be looking at in depth team data from 2014-2018 and historic player data from every NBA player that has ever played to try to determine if this is in fact a reality rather than a belief. 
+
+###Importing and Inspecting Datasets
+
+```{r, results = "hide"}
+#Data Access 
+NBAData <- read.csv("nba.games.stats.csv") #Data Source 1
+AllTime <- read.csv("Seasons_Stats.csv")   #Data Source 2
+
+head(NBAData)  #DataAccess
+nrow(NBAData)  #DataAccess
+head(AllTime)
+nrow(AllTime)
+```
+
+###Libraries Used
+
+```{r, warning = FALSE, message = FALSE}
+#Libraries
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+```
+
+###User Defined Function
+
+```{r}
+#Custom function to determine if a team is East or West
+whichConf <- function(team){
+  if (team %in% c("ATL", "BOS", "BRK" ,"CHI", "CHO", 
+                  "CLE", "DET", "IND", "MIA", "MIL", 
+                  "NYK", "ORL", "PHI", "TOR", "WAS")){
+    return("East")
+  }
+  else {
+    return("West")
+  }
+} #Wrangling 4 (Control flow with if-else statement)
+```
+
+###Data Visualization #1
+
+```{r, warning = FALSE}
+#Visualizing Change of amounts of threes taken per year for each team 
+ModifiedNBA <-
+NBAData %>%
+  mutate(Date = year(lubridate::ymd(Date))) %>%  #Wrangling1
+  group_by(Team,Date) %>%
+  summarise(AvgThree = mean(X3PointShotsAttempted))  #Wrangling2
+
+NewModified <-
+  ModifiedNBA %>%
+  mutate(Conf = whichConf(Team)) #Wrangling3 (Using my user defined function)
+
+NewModified %>%
+  ggplot(aes(x = Date, y = AvgThree, group = Team)) +
+  geom_line(size = 1, alpha = 0.5, aes(color = Team)) +
+  facet_wrap(~Conf, dir = "v") #Visualization 1 and 2
+```
+
+In the above plots, I am visualizing the average amount of threes taken for each team from the years 2014-2018 and faceting on which conference the teams are in for further detail. There are a few things to take away from the plots:
+
+-It appears for both conferences, the average amount of threes taken per game has increased over this time period. This is relevant to my guiding question because taking more three pointers is indicative of a more offensive style of play. 
+
+-Although it is hard to discern which team is which due to the amount of teams on the plots (30), the overall trend of interest is still prominent.
+
+-Interestingly, the Eastern Conference teams as a whole appear to be shooting the same amount of threes per game, while there is more variation in the Western Conference. Futhermore, the Eastern conference as a whole appears to be shooting more threes on average than the Western Conference teams over the allotted time period.
+
+###Data Visualization #2
+
+```{r}
+#The three point line was not introduced until 1979, so I will only be looking at data starting from that point for my historic player data. This is considered by many to be a 'turning point' in NBA history, and the beginning of the three point era which is why I will only include this portion of the historical data in my analysis.
+HistData <-
+AllTime %>%
+  filter(Year >= 1979)
+
+HistRebounds <-
+HistData %>%
+  group_by(Year) %>%
+  summarise(AvgReb = mean(TRB.))
+
+HistRebounds %>%
+  ggplot(aes(x = Year, y = AvgReb)) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = 'lm', se = FALSE, na.rm = TRUE) #Visualization3
+```
+
+In the plot above, I am showing the average amount of rebounds per game across all players for each year between 1979 and 2017. As seen on the plot above, it appears this metric appears to be steadily increasing over the allotted time period. I believe this supports my research question because it is intuitive that if there are more overall rebounds, then there are more possesions and opportunities for teams to score and produce offense.
+
+###Linear Regression Analysis
+
+```{r}
+linearMod <- lm(FieldGoalsAttempted ~ TotalRebounds, data = NBAData) #DataWrangling5
+summary(linearMod)
+```
+
+In the above code chunk, I run a linear regression model to determine whether or not total rebounds has an impact on field goals attempted to back up the conclusions I made from the previous plot. According to the summary above, the significance test on whether or not total rebounds has an impact on field goals attempted shows that there is indeed a signficant relationship between the aforementiond variables. 
+
+###Conclusion
+
+Overall, it does appear than there is a shift in the NBA regarding the way the game is played. As evident by the rise in three pointers taken, the increase in average rebounds for each player, and the impact that rebounds has on amount of field goals attempted, the game is being played at a faster pace and teams are shooting more shots which results in more points being scored.
