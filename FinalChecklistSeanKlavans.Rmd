@@ -83,4 +83,3 @@ Line 94
 
 [Repository Link](https://github.com/seank22/Stat184FinalProject)
 
-https://github.com/seank22/Stat184FinalProject
